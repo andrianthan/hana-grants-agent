@@ -1,0 +1,107 @@
+{
+  "scraper_registry": [
+    {
+      "scraper_id": "grants-ca-gov",
+      "name": "California State Grants (grants.ca.gov)",
+      "url": "https://www.grants.ca.gov/grants/",
+      "type": "api",
+      "priority": "high",
+      "frequency": "daily",
+      "geography": "CA",
+      "notes": "California state grants — Hanna's #1 grant source. Native API client using grants.ca.gov public API."
+    },
+    {
+      "scraper_id": "grants-gov",
+      "name": "Federal Grants (Grants.gov)",
+      "url": "https://www.grants.gov/",
+      "type": "api",
+      "priority": "high",
+      "frequency": "daily",
+      "geography": "national",
+      "notes": "Federal grants — SAMHSA, HHS, ED, OVW. Uses Grants.gov REST API with keyword and eligibility filters."
+    },
+    {
+      "scraper_id": "sonoma-county-community-foundation",
+      "name": "Sonoma County Community Foundation",
+      "url": "https://www.sonomacf.org/grantseekers/",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "notes": "Local community foundation with grants for Sonoma County nonprofits. Playwright scraper on grants/RFP page."
+    },
+    {
+      "scraper_id": "california-wellness-foundation",
+      "name": "California Wellness Foundation",
+      "url": "https://www.calwellness.org/grants/",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "CA",
+      "notes": "Major CA health funder. Focus areas align with Hanna's mental health and youth services."
+    },
+    {
+      "scraper_id": "blue-shield-ca-foundation",
+      "name": "Blue Shield of California Foundation",
+      "url": "https://blueshieldcafoundation.org/grants",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "CA",
+      "notes": "CA health foundation funding mental health, domestic violence prevention, and health equity."
+    },
+    {
+      "scraper_id": "walter-s-johnson-foundation",
+      "name": "Walter S. Johnson Foundation",
+      "url": "https://www.wsjf.org/how-we-work/",
+      "type": "scraper",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "CA",
+      "notes": "Northern CA foundation focused on youth development and education equity. Invitation-based but posts RFPs."
+    },
+    {
+      "scraper_id": "sonoma-county-health",
+      "name": "Sonoma County Health Services",
+      "url": "https://sonomacounty.ca.gov/health-and-human-services/health-services",
+      "type": "scraper",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "notes": "County health department grants and RFPs. Hanna has deep county relationship (Probation, ARPA, SPTP)."
+    },
+    {
+      "scraper_id": "grantmakers-io",
+      "name": "Grantmakers.io (IRS 990-PF Foundation Discovery)",
+      "url": "https://www.grantmakers.io/",
+      "type": "api",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "CA",
+      "notes": "IRS 990-PF data for discovering CA foundations funding youth services. API with state/keyword filters."
+    },
+    {
+      "scraper_id": "samhsa-grants",
+      "name": "SAMHSA Grant Announcements",
+      "url": "https://www.samhsa.gov/grants/grant-announcements",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "national",
+      "notes": "Federal mental health and substance use grants. Key funder for behavioral health programs like CSC."
+    },
+    {
+      "scraper_id": "california-dhcs",
+      "name": "California DHCS Funding Opportunities",
+      "url": "https://www.dhcs.ca.gov/provgovpart/Pages/FundingOpportunities.aspx",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "CA",
+      "notes": "State Medi-Cal and behavioral health funding. DHCS funds Hanna's CSC Early Psychosis Program via CYBHI."
+    }
+  ],
+  "version": "1.0",
+  "last_updated": "2026-03-23",
+  "notes": "Phase 2 implements scrapers. APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda."
+}
