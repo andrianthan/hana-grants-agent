@@ -8,6 +8,7 @@
       "priority": "high",
       "frequency": "daily",
       "geography": "CA",
+      "profiles": ["mental-health-hub", "hanna-institute", "residential-housing", "hanna-academy", "recreation-enrichment", "general-operations"],
       "notes": "California state grants — Hanna's #1 grant source. Native API client using grants.ca.gov public API."
     },
     {
@@ -18,6 +19,7 @@
       "priority": "high",
       "frequency": "daily",
       "geography": "national",
+      "profiles": ["mental-health-hub", "hanna-institute", "residential-housing", "hanna-academy", "recreation-enrichment", "general-operations"],
       "notes": "Federal grants — SAMHSA, HHS, ED, OVW. Uses Grants.gov REST API with keyword and eligibility filters."
     },
     {
@@ -28,6 +30,7 @@
       "priority": "high",
       "frequency": "weekly",
       "geography": "sonoma-county",
+      "profiles": ["recreation-enrichment", "general-operations"],
       "notes": "Local community foundation with grants for Sonoma County nonprofits. Playwright scraper on grants/RFP page."
     },
     {
@@ -38,6 +41,7 @@
       "priority": "high",
       "frequency": "weekly",
       "geography": "CA",
+      "profiles": ["mental-health-hub"],
       "notes": "Major CA health funder. Focus areas align with Hanna's mental health and youth services."
     },
     {
@@ -48,6 +52,7 @@
       "priority": "high",
       "frequency": "weekly",
       "geography": "CA",
+      "profiles": ["mental-health-hub"],
       "notes": "CA health foundation funding mental health, domestic violence prevention, and health equity."
     },
     {
@@ -58,6 +63,7 @@
       "priority": "medium",
       "frequency": "weekly",
       "geography": "CA",
+      "profiles": ["hanna-academy", "residential-housing"],
       "notes": "Northern CA foundation focused on youth development and education equity. Invitation-based but posts RFPs."
     },
     {
@@ -68,6 +74,7 @@
       "priority": "medium",
       "frequency": "weekly",
       "geography": "sonoma-county",
+      "profiles": ["mental-health-hub", "residential-housing"],
       "notes": "County health department grants and RFPs. Hanna has deep county relationship (Probation, ARPA, SPTP)."
     },
     {
@@ -78,6 +85,7 @@
       "priority": "medium",
       "frequency": "weekly",
       "geography": "CA",
+      "profiles": ["general-operations"],
       "notes": "IRS 990-PF data for discovering CA foundations funding youth services. API with state/keyword filters."
     },
     {
@@ -88,6 +96,7 @@
       "priority": "high",
       "frequency": "weekly",
       "geography": "national",
+      "profiles": ["mental-health-hub", "hanna-institute"],
       "notes": "Federal mental health and substance use grants. Key funder for behavioral health programs like CSC."
     },
     {
@@ -98,10 +107,88 @@
       "priority": "high",
       "frequency": "weekly",
       "geography": "CA",
+      "profiles": ["mental-health-hub", "residential-housing"],
       "notes": "State Medi-Cal and behavioral health funding. DHCS funds Hanna's CSC Early Psychosis Program via CYBHI."
+    },
+    {
+      "scraper_id": "propublica-990",
+      "name": "ProPublica Nonprofit Explorer (990 API)",
+      "url": "https://projects.propublica.org/nonprofits/api",
+      "type": "api",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "national",
+      "profiles": ["general-operations"],
+      "notes": "IRS 990 data for researching funder giving history and identifying prospects. Free API."
+    },
+    {
+      "scraper_id": "usaspending-gov",
+      "name": "USASpending.gov (Federal Award History)",
+      "url": "https://api.usaspending.gov/",
+      "type": "api",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "national",
+      "profiles": ["mental-health-hub", "residential-housing", "hanna-academy", "hanna-institute", "recreation-enrichment", "general-operations"],
+      "notes": "Federal award history for competitive intelligence — who funds Sonoma County youth/mental health orgs."
+    },
+    {
+      "scraper_id": "bscc-ca-gov",
+      "name": "Board of State and Community Corrections (BSCC)",
+      "url": "https://www.bscc.ca.gov/s_correctionsplanninggrants/",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "CA",
+      "profiles": ["residential-housing", "mental-health-hub"],
+      "notes": "OJJDP Title II and juvenile justice grants. Hanna has existing Probation relationship for referrals."
+    },
+    {
+      "scraper_id": "sonoma-county-probation",
+      "name": "Sonoma County Probation Department",
+      "url": "https://sonomacounty.ca.gov/probation",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "profiles": ["residential-housing", "mental-health-hub"],
+      "notes": "County probation RFPs and contracts. Hanna has active probation referral relationship (HEAL/Camino Nuevo)."
+    },
+    {
+      "scraper_id": "sonoma-county-oes",
+      "name": "Sonoma County Office of Education",
+      "url": "https://sonomacounty.ca.gov/oes",
+      "type": "scraper",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "profiles": ["hanna-institute"],
+      "notes": "County education office grants for professional development and trauma-informed training programs."
+    },
+    {
+      "scraper_id": "sonoma-county-css",
+      "name": "Sonoma County Community Services and Support",
+      "url": "https://sonomacounty.ca.gov/css",
+      "type": "scraper",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "profiles": ["recreation-enrichment", "general-operations"],
+      "notes": "County community services RFPs for recreation, enrichment, and youth development programs."
+    },
+    {
+      "scraper_id": "sonoma-county-bhs",
+      "name": "Sonoma County Behavioral Health Division",
+      "url": "https://sonomacounty.ca.gov/bhd",
+      "type": "scraper",
+      "priority": "high",
+      "frequency": "weekly",
+      "geography": "sonoma-county",
+      "profiles": ["mental-health-hub"],
+      "notes": "County behavioral health contracts and subgrants. Key funder for Hanna's community mental health services."
     }
   ],
-  "version": "1.0",
-  "last_updated": "2026-03-23",
+  "version": "2.0",
+  "last_updated": "2026-03-27",
   "notes": "Phase 2 implements scrapers. APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda."
 }
