@@ -76,14 +76,17 @@ $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS documents (
     id          SERIAL PRIMARY KEY,
-    source_file TEXT NOT NULL,
-    doc_type    TEXT NOT NULL,
-    title       TEXT,
-    content     TEXT NOT NULL,
-    chunk_index INTEGER DEFAULT 0,
-    embedding   vector({EMBEDDING_DIMS}) NOT NULL,
-    metadata    JSONB,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    source_file   TEXT NOT NULL,
+    doc_type      TEXT NOT NULL,
+    title         TEXT,
+    section_title TEXT,
+    funder        TEXT,
+    year          TEXT,
+    content       TEXT NOT NULL,
+    chunk_index   INTEGER DEFAULT 0,
+    embedding     vector({EMBEDDING_DIMS}) NOT NULL,
+    metadata      JSONB,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(source_file, chunk_index)
 );
 

@@ -1,125 +1,125 @@
-# Hanna Center — Grant Evaluation Criteria
+# Evaluation Criteria
 
-*This file is read directly by the Evaluator agent (Phase 3) to score grant opportunities.*
-*Marisa Binder (VP Grants) updates this file when priorities or thresholds shift.*
+*This file is read by the Evaluator agent (Phase 3). Marisa Binder updates this file when priorities or thresholds shift.*
+*Format: Each flag is a structured block. Do not change the field names (id, weight, etc.) -- only change the values.*
+*Last updated: 2026-03-27*
 
-***
+## Eligibility Pre-Filters (Hard Stops)
 
-## How to Use This File
+The Evaluator rejects grants that fail ANY of these before scoring:
 
-The Evaluator agent reads each flag below and scores incoming grants against them. Each flag produces a rating and reasoning that appears in the weekly digest. Staff should update thresholds and weights here — not in ORG-PROFILE.md or in code.
-
-***
+- org_type: 501(c)(3) nonprofit
+- geography: California OR Sonoma County OR national (with CA eligibility)
+- population: youth, families, trauma-impacted, mental health, residential, community resilience
+- deadline: > today (not expired)
 
 ## Evaluation Flags
 
 ### Flag 1: Strategic Priority Alignment
-- **Question:** Does this grant fund one of Hanna's current strategic priorities?
-- **id:** `strategic_priority_alignment`
-- **weight:** HIGH
-- **scoring:**
-  - Strong match: Grant explicitly funds an active strategic priority (see ORG-PROFILE.md > Current Strategic Priorities)
-  - Partial match: Grant aligns with Hanna's mission but not a current priority
-  - Weak match: Grant is tangentially related or requires new program development
-- **source:** Cross-reference with `org-materials/ORG-PROFILE.md ## Current Strategic Priorities`
+
+id: strategic_priority_alignment
+weight: HIGH
+status: confirmed
+calibration_needed: false
+description: Does this grant align with Hanna's current strategic priorities listed in ORG-PROFILE.md?
+scoring_rubric:
+  9-10: Directly funds an active strategic priority (CSC, Mental Health Hub, HEAL, CTE, Trauma Training)
+  7-8: Strong overlap with one or more strategic priorities
+  5-6: Tangential connection to strategic priorities
+  3-4: Weak connection; would require repurposing existing programs
+  1-2: No connection to current strategic priorities
 
 ### Flag 2: Staff Time Cost
-- **Question:** What is the true staff time cost (application + reporting + compliance)?
-- **id:** `staff_time_cost`
-- **weight:** HIGH
-- **scoring:**
-  - Low burden: < 20 hours total (application + first year reporting)
-  - Medium burden: 20-60 hours total
-  - High burden: > 60 hours total
-- **context:** Hanna has a 2-person grants team (VP Grants + Grants Manager). High-burden grants must have proportionally high award amounts to justify.
-- **calibration_needed:** true — confirm loaded labor rate with Marisa before Phase 3
+
+id: staff_time_cost
+weight: HIGH
+status: confirmed
+calibration_needed: true
+description: Estimated staff hours for application + reporting + compliance relative to award size.
+scoring_rubric:
+  9-10: Minimal application effort, streamlined reporting (e.g., foundation letter of inquiry)
+  7-8: Moderate application, standard quarterly reporting
+  5-6: Significant application (20+ hours), detailed reporting requirements
+  3-4: Major application effort (40+ hours), intensive compliance monitoring
+  1-2: Extreme effort relative to award size; ROI negative for a 2-person grants team
+notes: Calibrate labor rate and hour thresholds with Marisa before Phase 3 prompt design.
 
 ### Flag 3: Reporting Burden
-- **Question:** How heavy is the ongoing reporting requirement?
-- **id:** `reporting_burden`
-- **weight:** MEDIUM
-- **scoring:**
-  - Light: Annual narrative report only
-  - Medium: Quarterly reports with basic metrics
-  - Heavy: Monthly reporting, site visits, external evaluation required
-- **context:** For a 2-person team, heavy reporting on a $25K grant is not viable. Threshold: grants under $50K should not carry heavy reporting.
-- **calibration_needed:** true — calibrate light/medium/heavy with Marisa before Phase 3
+
+id: reporting_burden
+weight: MEDIUM
+status: confirmed
+calibration_needed: true
+description: Weight of ongoing reporting requirements relative to a 2-person grants team.
+scoring_rubric:
+  9-10: Light -- annual narrative report only
+  7-8: Light-Medium -- semi-annual reports, basic data collection
+  5-6: Medium -- quarterly reports, outcome tracking, site visits
+  3-4: Medium-Heavy -- monthly reports, federal compliance, audits
+  1-2: Heavy -- continuous reporting, complex federal requirements, multiple agency oversight
+notes: Calibrate burden thresholds with Marisa before Phase 3 prompt design.
 
 ### Flag 4: Relationship Required
-- **Question:** Is a prior funder relationship required or advantageous?
-- **id:** `relationship_required`
-- **weight:** MEDIUM
-- **scoring:**
-  - No relationship needed: Open competition, first-time applicants welcome
-  - Relationship helpful: Prior grantees given preference but not required
-  - Relationship required: Invitation-only or requires letter of intent from known grantee
-- **source:** Cross-reference with `org-materials/FUNDER-DIRECTORY.md` for known funder relationships
+
+id: relationship_required
+weight: MEDIUM
+status: confirmed
+calibration_needed: false
+description: Does the funder require or strongly prefer an existing relationship with the applicant?
+scoring_rubric:
+  9-10: No relationship required; open competitive process
+  7-8: Relationship helpful but not required; Hanna has prior contact
+  5-6: Relationship preferred; Hanna has no prior contact but could establish one
+  3-4: Strong relationship required; Hanna has no prior contact
+  1-2: Invitation-only or requires multi-year established relationship
 
 ### Flag 5: Timeline Fit
-- **Question:** Does the deadline fit Hanna's current capacity and grant load?
-- **id:** `timeline_fit`
-- **weight:** MEDIUM
-- **scoring:**
-  - Good fit: Deadline > 4 weeks out, no competing deadlines in same window
-  - Tight fit: Deadline 2-4 weeks out, manageable with prioritization
-  - Poor fit: Deadline < 2 weeks or overlaps with multiple active applications
-- **context:** Staff capacity fluctuates — this flag is most useful when combined with the active grant load visible in the system.
-- **calibration_needed:** true — need mechanism to capture current staff capacity (changes weekly)
 
-### Flag 6: Current Programs vs. New Programs
-- **Question:** Does this fund existing programs or require building something new?
-- **id:** `current_vs_new_programs`
-- **weight:** HIGH
-- **scoring:**
-  - Current programs: Grant funds services Hanna already delivers (strong — can show track record)
-  - Program expansion: Grant funds extending existing programs to new populations or geographies (moderate)
-  - New program: Grant requires building a program Hanna does not currently operate (weak — high startup cost, no track record to cite)
-- **source:** Cross-reference with `org-materials/ORG-PROFILE.md` program descriptions
+id: timeline_fit
+weight: MEDIUM
+status: confirmed
+calibration_needed: true
+description: Does the grant deadline fit Hanna's current staff capacity and active grant load?
+scoring_rubric:
+  9-10: 60+ days to deadline; no competing deadlines
+  7-8: 30-60 days; manageable with current load
+  5-6: 14-30 days; tight but possible if prioritized
+  3-4: 7-14 days; would require dropping other work
+  1-2: < 7 days; effectively impossible for a 2-person team
+notes: Calibrate capacity mechanism with Marisa before Phase 3 prompt design.
 
-***
+### Flag 6: Current vs New Programs
 
-## Overall Scoring
+id: current_vs_new_programs
+weight: HIGH
+status: confirmed
+calibration_needed: false
+description: Does this grant fund services Hanna already delivers, or would it require building something new?
+scoring_rubric:
+  9-10: Directly funds an existing, operational Hanna program
+  7-8: Funds existing program with minor expansion or adaptation
+  5-6: Requires moderate program development or new partnerships
+  3-4: Requires significant new program development
+  1-2: Would require entirely new infrastructure, staff, or capabilities
 
-The Evaluator agent produces a composite fit score (1-10) by weighing all 6 flags. Grants scoring below 6/10 are filtered out of the weekly digest.
+### Flag 7: Program Fit (PROPOSED -- Pending Confirmation)
 
-| Score Range | Interpretation |
-|-------------|----------------|
-| 8-10 | Strong match — prioritize application |
-| 6-7 | Worth reviewing — flag for staff decision |
-| 4-5 | Marginal — likely skip unless strategic reason |
-| 1-3 | Poor fit — auto-filtered |
+id: program_fit
+weight: MEDIUM
+status: proposed
+calibration_needed: true
+description: How well does the grant's program requirements match Hanna's specific department capabilities? This flag was proposed by the planner as distinct from strategic_priority_alignment (which measures alignment with org-wide priorities). Program fit measures whether a specific department has the operational capacity and expertise to execute. Needs Marisa's confirmation before Phase 3 implementation.
+scoring_rubric:
+  9-10: Perfect match -- department already runs this exact type of program
+  7-8: Strong match -- department has relevant expertise and infrastructure
+  5-6: Partial match -- department could adapt existing programs
+  3-4: Weak match -- would require significant department capacity building
+  1-2: No match -- wrong department entirely
+notes: This is a PROPOSED 7th flag. It will not be used in Phase 3 scoring unless Marisa confirms it in the pre-Phase-3 calibration call. If confirmed, it distinguishes department-level fit from org-level strategic alignment.
 
-***
+## Scoring Guide
 
-## Eligibility Pre-Filters (Hard Stops)
-
-Before flag scoring, the Evaluator checks these hard eligibility criteria. If ANY fails, the grant is rejected without scoring:
-
-1. **Organization type:** Must accept 501(c)(3) nonprofit applicants
-2. **Geography:** Must be open to California, specifically Sonoma County organizations (or national/statewide)
-3. **Population served:** Must align with youth, families, or communities impacted by trauma/adversity
-4. **Deadline:** Must be in the future (not expired)
-
-***
-
-## Core Eligibility Themes (from Grant Eligibility Criteria document)
-
-The following themes represent areas where Hanna Center and Hanna Academy consistently qualify for funding. The Evaluator agent uses these as positive signals when scoring alignment:
-
-### Hanna Center Themes
-1. **Trauma-Informed Youth Services & Behavioral Health** — Licensed provider, evidence-based models, high-risk youth
-2. **Foster Youth, TAY, and Systems-Involved Youth** — Housing, wraparound supports, county coordination
-3. **Career Technical Education & Workforce Pathways** — CTE tracks, specialized education, workforce readiness
-4. **Arts, Recreation, and Enrichment** — After-school/summer programs, social-emotional development
-5. **General Operating & Institutional Trust** — 80+ year history, strong governance, community impact
-
-### Hanna Academy Themes
-- Alternative/nontraditional education for youth with IEPs
-- Workforce and postsecondary transition support
-- Equity in education access
-- Small cohort learning environments
-
-***
-
-*Last updated: 2026-03-23*
-*Owner: Marisa Binder (VP Grants), Hanna Center*
+scale: 1-10 (integer)
+threshold: 6 (grants scoring below 6 are filtered from digest)
+method: Weighted average across all confirmed flags (6 flags in v1; 7 if program_fit is confirmed)
+output: Overall score (1-10), per-flag scores, 2-sentence reasoning, flags as JSON object
