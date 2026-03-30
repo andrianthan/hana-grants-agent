@@ -143,7 +143,7 @@ class HannaStack(Stack):
             iam.PolicyStatement(
                 actions=["bedrock:InvokeModel"],
                 resources=[
-                    "arn:aws:bedrock:us-west-1::foundation-model/amazon.titan-embed-text-v2:0"
+                    "arn:aws:bedrock:us-west-2::foundation-model/amazon.titan-embed-text-v2:0"
                 ],
             )
         )
@@ -238,7 +238,7 @@ class HannaStack(Stack):
             subs.EmailSubscription(alert_email_param.value_as_string)
         )
 
-        # NOTE: CloudWatch billing alarms MUST be created in us-east-1 (not us-west-1).
+        # NOTE: CloudWatch billing alarms MUST be created in us-east-1 (not us-west-2).
         # The AWS/Billing EstimatedCharges metric only exists in us-east-1.
         # After deploying this stack, manually create two alarms in us-east-1:
         #

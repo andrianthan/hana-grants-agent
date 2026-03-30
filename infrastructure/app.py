@@ -4,5 +4,5 @@ from stacks.hanna_stack import HannaStack
 
 app = cdk.App()
 HannaStack(app, "HannaGrantsStack",
-    env=cdk.Environment(region="us-west-1"))
+    env=cdk.Environment(region="us-west-2"))
 app.synth()
