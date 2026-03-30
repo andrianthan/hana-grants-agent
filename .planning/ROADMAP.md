@@ -33,10 +33,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [ ] 01-01-PLAN.md -- CDK Infrastructure Stack (RDS, Lambda role, API GW, S3, CloudWatch, EventBridge, billing alarms)
-- [ ] 01-02-PLAN.md -- Org Context Files (ORG-PROFILE.md extension, EVAL-CRITERIA.md, SEARCH-PROFILES.md with 6 profiles, scraper_registry.json)
-- [ ] 01-03-PLAN.md -- DB Schema + Shared Utilities (init_db.py with all 6 tables, db.py rotation-aware module, embeddings.py, chunking.py)
-- [ ] 01-04-PLAN.md -- Document Ingestion (PDF extraction, chunking, Bedrock Titan embedding, pgvector storage)
-- [ ] 01-05-PLAN.md -- HyDE Query Generation (per-profile GPT-5.4 hypothetical grants, Bedrock embedding, hash-based regeneration)
+- [x] 01-02-PLAN.md -- Org Context Files (ORG-PROFILE.md extension, EVAL-CRITERIA.md, SEARCH-PROFILES.md with 6 profiles, scraper_registry.json)
+- [x] 01-03-PLAN.md -- DB Schema + Shared Utilities (init_db.py with all 6 tables, db.py rotation-aware module, embeddings.py, chunking.py)
+- [x] 01-04-PLAN.md -- Document Ingestion (PDF extraction, chunking, Bedrock Titan embedding, pgvector storage)
+- [x] 01-05-PLAN.md -- HyDE Query Generation (per-profile GPT-5.4 hypothetical grants, Bedrock embedding, hash-based regeneration)
 
 ### Phase 2: Ingestion Pipeline + Backfill
 **Goal**: All 17 grant sources flow into the database automatically via a daily Step Functions Standard pipeline, with scraper health monitoring catching silent failures, and a one-time backfill populating 500-900 historical grants for Phase 3 to search.
