@@ -1,2 +1,5 @@
 .planning/
 __pycache__/
+.venv/
+cdk.out/
+*.egg-info/
