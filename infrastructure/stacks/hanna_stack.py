@@ -63,7 +63,7 @@ class HannaStack(Stack):
         param_group = rds.ParameterGroup(
             self, "HannaDbParams",
             engine=rds.DatabaseInstanceEngine.postgres(
-                version=rds.PostgresEngineVersion.VER_16_4,
+                version=rds.PostgresEngineVersion.VER_16_12,
             ),
             parameters={
                 "rds.force_ssl": "1",
@@ -74,7 +74,7 @@ class HannaStack(Stack):
         db = rds.DatabaseInstance(
             self, "HannaDb",
             engine=rds.DatabaseInstanceEngine.postgres(
-                version=rds.PostgresEngineVersion.VER_16_4,
+                version=rds.PostgresEngineVersion.VER_16_12,
             ),
             instance_type=ec2.InstanceType.of(
                 ec2.InstanceClass.BURSTABLE4_GRAVITON,

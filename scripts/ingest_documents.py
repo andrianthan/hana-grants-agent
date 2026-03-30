@@ -179,14 +179,34 @@ def ingest_file(
     return count
 
 
-def ingest_extracted_pdfs(conn, org_dir: str) -> dict:
-    """Phase 1: Ingest extracted PDF text files."""
+def _reconnect_if_needed(conn, secret_arn: str):
+    """Reconnect to the database if the connection is closed or broken."""
+    if conn is None or conn.closed:
+        print("    Reconnecting to database...")
+        import utils.db as db_mod
+        db_mod._conn = None  # Clear cached connection
+        return get_connection(secret_arn)
+    try:
+        conn.rollback()  # Clear any failed transaction state
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        return conn
+    except Exception:
+        print("    Reconnecting to database...")
+        import utils.db as db_mod
+        db_mod._conn = None
+        return get_connection(secret_arn)
+
+
+def ingest_extracted_pdfs(conn, org_dir: str, secret_arn: str) -> tuple:
+    """Phase 1: Ingest extracted PDF text files. Returns (conn, stats)."""
     extracted_dir = os.path.join(org_dir, ".extracted-text")
     stats = {"files": 0, "chunks": 0, "errors": []}
 
     if not os.path.isdir(extracted_dir):
         print(f"  WARNING: Extracted text directory not found: {extracted_dir}")
-        return stats
+        return conn, stats
 
     txt_files = sorted(
         f for f in os.listdir(extracted_dir) if f.endswith(".txt")
@@ -208,6 +228,7 @@ def ingest_extracted_pdfs(conn, org_dir: str) -> dict:
         print(f"  Ingesting: {filename} (type={doc_type}, funder={funder}, year={year})")
 
         try:
+            conn = _reconnect_if_needed(conn, secret_arn)
             chunk_count = ingest_file(conn, text, filename, doc_type, funder, year)
             stats["files"] += 1
             stats["chunks"] += chunk_count
@@ -216,11 +237,11 @@ def ingest_extracted_pdfs(conn, org_dir: str) -> dict:
             print(f"    ERROR: {e}")
             stats["errors"].append({"file": filename, "error": str(e)})
 
-    return stats
+    return conn, stats
 
 
-def ingest_supplementary_markdown(conn, org_dir: str) -> dict:
-    """Phase 2: Ingest supplementary markdown files."""
+def ingest_supplementary_markdown(conn, org_dir: str, secret_arn: str) -> tuple:
+    """Phase 2: Ingest supplementary markdown files. Returns (conn, stats)."""
     current_year = str(datetime.now().year)
     stats = {"files": 0, "chunks": 0, "errors": []}
 
@@ -245,6 +266,7 @@ def ingest_supplementary_markdown(conn, org_dir: str) -> dict:
         print(f"  Ingesting: {filename} (type={doc_type}, funder={funder}, year={year})")
 
         try:
+            conn = _reconnect_if_needed(conn, secret_arn)
             chunk_count = ingest_file(conn, text, filename, doc_type, funder, year)
             stats["files"] += 1
             stats["chunks"] += chunk_count
@@ -253,7 +275,7 @@ def ingest_supplementary_markdown(conn, org_dir: str) -> dict:
             print(f"    ERROR: {e}")
             stats["errors"].append({"file": filename, "error": str(e)})
 
-    return stats
+    return conn, stats
 
 
 def main():
@@ -290,12 +312,13 @@ def main():
         conn.commit()
 
     # Phase 1: Extracted PDF text files
-    pdf_stats = ingest_extracted_pdfs(conn, args.org_materials)
+    conn, pdf_stats = ingest_extracted_pdfs(conn, args.org_materials, args.secret_arn)
 
     # Phase 2: Supplementary markdown files
-    md_stats = ingest_supplementary_markdown(conn, args.org_materials)
+    conn, md_stats = ingest_supplementary_markdown(conn, args.org_materials, args.secret_arn)
 
     # Final verification: count total rows
+    conn = _reconnect_if_needed(conn, args.secret_arn)
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM documents")
     total_rows = cur.fetchone()[0]

@@ -183,6 +183,7 @@ def main():
 
     print(f"Connecting to RDS via Secrets Manager...")
     conn = get_connection(args.secret_arn, args.region)
+    conn.rollback()  # Clear any open transaction from connection setup
     conn.autocommit = True
 
     print(f"Creating schema (EMBEDDING_DIMS={EMBEDDING_DIMS})...")

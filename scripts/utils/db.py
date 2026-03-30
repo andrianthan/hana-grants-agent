@@ -62,5 +62,8 @@ def _create_connection(secret_arn: str, region: str):
         sslmode="require",
         connect_timeout=10,
     )
-    register_vector(conn)
+    try:
+        register_vector(conn)
+    except psycopg2.ProgrammingError:
+        pass  # pgvector extension not yet installed (init_db.py will create it)
     return conn

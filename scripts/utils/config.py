@@ -16,5 +16,6 @@ EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 # AWS region
 AWS_REGION = "us-west-2"
 
-# OpenAI model for HyDE generation (dated name -- GPT-4o retired March 31 2026)
-HYDE_MODEL = "gpt-5.4-2026-03-05"
+# OpenAI model for HyDE generation
+# Using OpenRouter model name format; change to "gpt-5.4-2026-03-05" for direct OpenAI
+HYDE_MODEL = "openai/gpt-4.1"

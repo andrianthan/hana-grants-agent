@@ -22,6 +22,9 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
+
 from openai import OpenAI
 from utils.config import EMBEDDING_DIMS, HYDE_MODEL, AWS_REGION
 from utils.db import get_connection
@@ -238,8 +241,11 @@ def main():
     # Get existing hashes for skip logic
     existing_hashes = get_existing_hashes(conn, list(profiles.keys()))
 
-    # Initialize OpenAI client
-    client = OpenAI()
+    # Initialize OpenAI client (supports OpenRouter via OPENAI_BASE_URL env var)
+    client = OpenAI(
+        api_key=os.environ.get("OPENROUTER_API_KEY", os.environ.get("OPENAI_API_KEY")),
+        base_url=os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+    )
 
     # Process each profile
     generated = 0
