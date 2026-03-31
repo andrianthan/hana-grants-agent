@@ -1,3 +1,6 @@
+import json
+import os
+
 from aws_cdk import (
     Stack, Duration, RemovalPolicy, CfnOutput, CfnParameter,
     aws_ec2 as ec2, aws_rds as rds,
@@ -5,6 +8,11 @@ from aws_cdk import (
     aws_s3 as s3, aws_logs as logs,
     aws_events as events, aws_events_targets as targets,
     aws_iam as iam, aws_sns as sns, aws_sns_subscriptions as subs,
+    aws_stepfunctions as sfn,
+    aws_stepfunctions_tasks as sfn_tasks,
+    aws_ecr_assets as ecr_assets,
+    aws_cloudwatch as cw,
+    aws_cloudwatch_actions as cw_actions,
 )
 from constructs import Construct
 
@@ -148,17 +156,51 @@ class HannaStack(Stack):
             )
         )
 
-        # --- Lambda Placeholder ---
-        placeholder_fn = lambda_.Function(
-            self, "HannaPlaceholderFn",
-            runtime=lambda_.Runtime.PYTHON_3_13,
-            handler="index.handler",
-            code=lambda_.Code.from_inline(
-                "def handler(event, context): return {'statusCode': 200, 'body': 'placeholder'}"
+        # --- Scraper Docker Lambda (INFRA-04, D-09) ---
+        scraper_fn = lambda_.DockerImageFunction(
+            self, "HannaScraperFn",
+            code=lambda_.DockerImageCode.from_image_asset(
+                directory=os.path.join(os.path.dirname(__file__), "..", ".."),  # repo root
+                file="infrastructure/docker/scraper/Dockerfile",
+                platform=ecr_assets.Platform.LINUX_AMD64,
+                exclude=[
+                    "infrastructure/cdk.out", ".venv", ".git", ".planning",
+                    "org-materials", "__pycache__", "*.pyc", ".context",
+                ],
             ),
-            timeout=Duration.seconds(30),
-            memory_size=128,
+            memory_size=2048,
+            timeout=Duration.minutes(10),
             role=lambda_role,
+            environment={
+                "DB_SECRET_ARN": db.secret.secret_arn,
+                "S3_BUCKET": bucket.bucket_name,
+                "AWS_REGION_NAME": "us-west-2",
+                "OPENROUTER_API_KEY": "",  # Set via Lambda console or SSM
+                "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+                "EXTRACTION_MODEL": "openai/gpt-5.4-mini",
+            },
+            architecture=lambda_.Architecture.X86_64,
+        )
+
+        # --- Processing Lambda (zip package, lightweight utility per INFRA-04) ---
+        processing_fn = lambda_.Function(
+            self, "HannaProcessingFn",
+            runtime=lambda_.Runtime.PYTHON_3_13,
+            handler="processing_handler.handler",
+            code=lambda_.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "scrapers", "processing"),
+            ),
+            memory_size=512,
+            timeout=Duration.minutes(5),
+            role=lambda_role,
+            environment={
+                "DB_SECRET_ARN": db.secret.secret_arn,
+                "S3_BUCKET": bucket.bucket_name,
+                "AWS_REGION_NAME": "us-west-2",
+                "OPENROUTER_API_KEY": "",
+                "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+                "EXTRACTION_MODEL": "openai/gpt-5.4-mini",
+            },
         )
 
         # --- API Gateway Scaffold ---
@@ -211,15 +253,95 @@ class HannaStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        # --- EventBridge Scaffolds (both disabled -- enabled in Phase 2/3) ---
+        # --- Step Functions Pipeline (INGEST-06, D-11, PIPE-01) ---
 
-        # Daily ingestion: 6am PT = 13:00 UTC (Phase 2 enables this)
+        # Load scraper_registry.json at CDK synth time for EventBridge input
+        registry_path = os.path.join(os.path.dirname(__file__), "..", "..", "scraper_registry.json")
+        with open(registry_path) as f:
+            scraper_registry = json.load(f)
+        source_configs = [
+            {"scraper_id": s["scraper_id"], "type": s["type"], "url": s["url"]}
+            for s in scraper_registry["scraper_registry"]
+        ]
+
+        # Scrape task: invoke scraper Lambda per source
+        scrape_task = sfn_tasks.LambdaInvoke(
+            self, "ScrapeSingle",
+            lambda_function=scraper_fn,
+            payload=sfn.TaskInput.from_json_path_at("$"),
+            result_path="$.scrapeResult",
+            retry_on_service_exceptions=True,
+        )
+        scrape_task.add_retry(
+            max_attempts=2,
+            backoff_rate=2.0,
+            interval=Duration.seconds(5),
+            errors=["States.TaskFailed"],
+        )
+        scrape_task.add_catch(
+            handler=sfn.Pass(self, "CatchScrapeError"),
+            result_path="$.error",
+        )
+
+        # Process task: run dedup -> extract -> embed -> health for each batch
+        process_task = sfn_tasks.LambdaInvoke(
+            self, "ProcessBatch",
+            lambda_function=processing_fn,
+            payload=sfn.TaskInput.from_json_path_at("$.scrapeResult.Payload"),
+            result_path="$.processResult",
+        )
+
+        # Chain: scrape -> process per source
+        scrape_then_process = scrape_task.next(process_task)
+
+        # DistributedMap: fan out to all sources with failure tolerance (D-11)
+        map_state = sfn.DistributedMap(
+            self, "ScrapeAllSources",
+            max_concurrency=5,
+            items_path="$.sources",
+            result_path="$.results",
+            tolerated_failure_percentage=30,
+        )
+        map_state.item_processor(scrape_then_process)
+
+        # Log pipeline run after all sources processed
+        log_run = sfn_tasks.LambdaInvoke(
+            self, "LogPipelineRun",
+            lambda_function=processing_fn,
+            payload=sfn.TaskInput.from_object({
+                "action": "log_pipeline_run",
+                "results": sfn.JsonPath.string_at("$.results"),
+            }),
+        )
+
+        # Start -> DistributedMap -> Log
+        definition = map_state.next(log_run)
+
+        pipeline_sm = sfn.StateMachine(
+            self, "HannaIngestionPipeline",
+            definition_body=sfn.DefinitionBody.from_chainable(definition),
+            state_machine_type=sfn.StateMachineType.STANDARD,
+            timeout=Duration.minutes(30),
+        )
+
+        # Grant Step Functions permissions to invoke Lambdas
+        scraper_fn.grant_invoke(pipeline_sm.role)
+        processing_fn.grant_invoke(pipeline_sm.role)
+
+        # --- EventBridge Rules ---
+
+        # Daily ingestion: 6am PT = 13:00 UTC — NOW ENABLED for Phase 2
         daily_rule = events.Rule(
             self, "HannaDailyIngestion",
             schedule=events.Schedule.cron(hour="13", minute="0"),
-            enabled=False,
+            enabled=True,
         )
-        daily_rule.add_target(targets.LambdaFunction(placeholder_fn))
+        daily_rule.add_target(targets.SfnStateMachine(
+            pipeline_sm,
+            input=events.RuleTargetInput.from_object({
+                "sources": source_configs,
+            }),
+        ))
 
         # Weekly evaluation: Monday 7am PT = 14:00 UTC (Phase 3 enables this)
         weekly_rule = events.Rule(
@@ -227,7 +349,8 @@ class HannaStack(Stack):
             schedule=events.Schedule.cron(week_day="MON", hour="14", minute="0"),
             enabled=False,
         )
-        weekly_rule.add_target(targets.LambdaFunction(placeholder_fn))
+        # Placeholder target until Phase 3 wires the evaluator
+        weekly_rule.add_target(targets.SfnStateMachine(pipeline_sm))
 
         # --- SNS Topic for Billing Alerts ---
         billing_topic = sns.Topic(
@@ -237,6 +360,21 @@ class HannaStack(Stack):
         billing_topic.add_subscription(
             subs.EmailSubscription(alert_email_param.value_as_string)
         )
+
+        # --- CloudWatch Alarm for scraper health (INGEST-07, D-01) ---
+        health_alarm = cw.Alarm(
+            self, "ScraperHealthAlarm",
+            metric=cw.Metric(
+                namespace="HannaGrants",
+                metric_name="ScraperConsecutiveZeros",
+                statistic="Maximum",
+                period=Duration.hours(24),
+            ),
+            threshold=3,
+            evaluation_periods=1,
+            alarm_description="A scraper has returned 0 grants for 3+ consecutive days",
+        )
+        health_alarm.add_alarm_action(cw_actions.SnsAction(billing_topic))
 
         # NOTE: CloudWatch billing alarms MUST be created in us-east-1 (not us-west-2).
         # The AWS/Billing EstimatedCharges metric only exists in us-east-1.
@@ -274,3 +412,6 @@ class HannaStack(Stack):
         CfnOutput(self, "LambdaRoleArn", value=lambda_role.role_arn)
         CfnOutput(self, "BillingAlertsSnsTopicArn", value=billing_topic.topic_arn)
         CfnOutput(self, "AllowedIpsParam", value=allowed_ips_param.value_as_string)
+        CfnOutput(self, "ScraperFnArn", value=scraper_fn.function_arn)
+        CfnOutput(self, "ProcessingFnArn", value=processing_fn.function_arn)
+        CfnOutput(self, "IngestionPipelineArn", value=pipeline_sm.state_machine_arn)
