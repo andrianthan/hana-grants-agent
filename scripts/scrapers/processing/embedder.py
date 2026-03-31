@@ -1,5 +1,15 @@
 """Bedrock Titan V2 embedding + grants table insert (INGEST-04, D-12, D-16)."""
+import re
 from utils.embeddings import get_embedding
+
+
+def _safe_date(value):
+    """Return value only if it looks like a valid ISO date (YYYY-MM-DD), else None."""
+    if not value:
+        return None
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value).strip()):
+        return str(value).strip()
+    return None
 
 
 def embed_and_store(conn, raw_grant, metadata, secret_arn: str = None):
@@ -25,7 +35,7 @@ def embed_and_store(conn, raw_grant, metadata, secret_arn: str = None):
         ON CONFLICT (content_hash) DO NOTHING
     """, (
         grant_id, metadata.title, metadata.funder,
-        metadata.deadline, metadata.funding_min, metadata.funding_max,
+        _safe_date(metadata.deadline), metadata.funding_min, metadata.funding_max,
         metadata.geography, metadata.eligibility, raw_grant.description,
         metadata.program_area, metadata.population_served,
         metadata.relationship_required, embedding,

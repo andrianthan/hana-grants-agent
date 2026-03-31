@@ -51,6 +51,7 @@ def _process_batch(conn, grants, scraper_id, progress):
             embed_and_store(conn, grant, metadata)
             progress["total_new"] += 1
         except Exception as e:
+            conn.rollback()
             log_extraction_failure(conn, scraper_id, str(e))
 
     return len(new_grants)
@@ -178,6 +179,7 @@ def main():
         complete_run(conn, run_id, grants_found=progress["total_processed"], grants_new=progress["total_new"])
         print(f"Backfill complete: {progress['total_processed']} processed, {progress['total_new']} new")
     except Exception as e:
+        conn.rollback()
         fail_run(conn, run_id, {"error": str(e)})
         save_progress(progress)
         print(f"Backfill failed at progress: {progress}. Use --resume to continue.")
