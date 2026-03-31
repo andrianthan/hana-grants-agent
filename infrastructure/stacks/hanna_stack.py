@@ -41,6 +41,16 @@ class HannaStack(Stack):
             description="Email address for billing alert notifications.",
         )
 
+        openrouter_api_key_param = CfnParameter(
+            self, "OpenRouterApiKey",
+            type="String",
+            no_echo=True,
+            description=(
+                "OpenRouter API key for LLM calls (extraction, evaluation). "
+                "Pass via --parameters OpenRouterApiKey=sk-or-... at deploy time."
+            ),
+        )
+
         # --- VPC ---
         vpc = ec2.Vpc(
             self, "HannaVpc",
@@ -175,7 +185,7 @@ class HannaStack(Stack):
                 "DB_SECRET_ARN": db.secret.secret_arn,
                 "S3_BUCKET": bucket.bucket_name,
                 "AWS_REGION_NAME": "us-west-2",
-                "OPENROUTER_API_KEY": "",  # Set via Lambda console or SSM
+                "OPENROUTER_API_KEY": openrouter_api_key_param.value_as_string,
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
                 "EXTRACTION_MODEL": "openai/gpt-5.4-mini",
             },
@@ -197,9 +207,9 @@ class HannaStack(Stack):
                 "DB_SECRET_ARN": db.secret.secret_arn,
                 "S3_BUCKET": bucket.bucket_name,
                 "AWS_REGION_NAME": "us-west-2",
-                "OPENROUTER_API_KEY": "",
+                "OPENROUTER_API_KEY": openrouter_api_key_param.value_as_string,
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
-                "EXTRACTION_MODEL": "openai/gpt-5.4-mini",
+                "EXTRACTION_MODEL": "openai/gpt-4.1-mini",
             },
         )
 
@@ -328,6 +338,33 @@ class HannaStack(Stack):
         scraper_fn.grant_invoke(pipeline_sm.role)
         processing_fn.grant_invoke(pipeline_sm.role)
 
+        # --- Evaluator Docker Lambda (Phase 3 — AI evaluation pipeline) ---
+        evaluator_fn = lambda_.DockerImageFunction(
+            self, "HannaEvaluatorFn",
+            code=lambda_.DockerImageCode.from_image_asset(
+                directory=os.path.join(os.path.dirname(__file__), "..", ".."),  # repo root
+                file="infrastructure/docker/evaluator/Dockerfile",
+                platform=ecr_assets.Platform.LINUX_AMD64,
+                exclude=[
+                    "infrastructure/cdk.out", ".venv", ".git", ".planning",
+                    "__pycache__", "*.pyc", ".context",
+                ],
+            ),
+            memory_size=1024,
+            timeout=Duration.minutes(15),
+            role=lambda_role,
+            environment={
+                "DB_SECRET_ARN": db.secret.secret_arn,
+                "S3_BUCKET": bucket.bucket_name,
+                "AWS_REGION_NAME": "us-west-2",
+                "OPENROUTER_API_KEY": openrouter_api_key_param.value_as_string,
+                "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+                "PREFILTER_MODEL": "openai/gpt-4.1-mini",
+                "EVALUATOR_MODEL": "openai/gpt-4.1",
+            },
+            architecture=lambda_.Architecture.X86_64,
+        )
+
         # --- EventBridge Rules ---
 
         # Daily ingestion: 6am PT = 13:00 UTC — NOW ENABLED for Phase 2
@@ -343,14 +380,19 @@ class HannaStack(Stack):
             }),
         ))
 
-        # Weekly evaluation: Monday 7am PT = 14:00 UTC (Phase 3 enables this)
+        # Weekly evaluation: Monday 7am PT = 14:00 UTC
+        # Disabled until first successful manual invocation confirms pipeline works
         weekly_rule = events.Rule(
             self, "HannaWeeklyEvaluation",
             schedule=events.Schedule.cron(week_day="MON", hour="14", minute="0"),
             enabled=False,
         )
-        # Placeholder target until Phase 3 wires the evaluator
-        weekly_rule.add_target(targets.SfnStateMachine(pipeline_sm))
+        weekly_rule.add_target(targets.LambdaFunction(
+            evaluator_fn,
+            event=events.RuleTargetInput.from_object({
+                "run_all_profiles": True,
+            }),
+        ))
 
         # --- SNS Topic for Billing Alerts ---
         billing_topic = sns.Topic(
@@ -415,3 +457,4 @@ class HannaStack(Stack):
         CfnOutput(self, "ScraperFnArn", value=scraper_fn.function_arn)
         CfnOutput(self, "ProcessingFnArn", value=processing_fn.function_arn)
         CfnOutput(self, "IngestionPipelineArn", value=pipeline_sm.state_machine_arn)
+        CfnOutput(self, "EvaluatorFnArn", value=evaluator_fn.function_arn)

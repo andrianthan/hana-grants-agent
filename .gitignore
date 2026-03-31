@@ -4,3 +4,4 @@ __pycache__/
 cdk.out/
 *.egg-info/
 .env
+scripts/backfill_progress.json
