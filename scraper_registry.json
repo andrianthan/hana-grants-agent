@@ -186,9 +186,53 @@
       "geography": "sonoma-county",
       "profiles": ["mental-health-hub"],
       "notes": "County behavioral health contracts and subgrants. Key funder for Hanna's community mental health services."
+    },
+    {
+      "scraper_id": "doheny-foundation",
+      "name": "Carrie Estelle Doheny Foundation",
+      "url": "https://www.dohenyfoundation.org/grants/",
+      "type": "scraper",
+      "priority": "medium",
+      "frequency": "weekly",
+      "geography": "CA",
+      "profiles": ["mental-health-hub", "hanna-institute", "residential-housing", "recreation-enrichment"],
+      "notes": "CA 501(c)(3), youth welfare, counseling, social welfare, camperships. Awards $1K-$350K. Multiple cycles/year. Discovered via 990-PF analysis — funds 2+ Hanna peer orgs."
+    },
+    {
+      "scraper_id": "sobrato-philanthropies",
+      "name": "Sobrato Philanthropies",
+      "url": "https://www.sobrato.com/sobrato-philanthropies/how-to-apply/",
+      "type": "scraper",
+      "priority": "low",
+      "frequency": "weekly",
+      "geography": "CA-SiliconValley",
+      "profiles": ["general-operations"],
+      "notes": "Page-change monitor. Invitation-only, email inquiry (grants@sobrato.org). Silicon Valley focus, Essential Human Services $50K-multi-million. Funds 5 Hanna peer orgs. Top-ranked 990-PF discovery."
+    },
+    {
+      "scraper_id": "weingart-foundation",
+      "name": "Weingart Foundation",
+      "url": "https://weingartfnd.org/for-grant-seekers/",
+      "type": "scraper",
+      "priority": "low",
+      "frequency": "weekly",
+      "geography": "CA-SoCal",
+      "profiles": ["general-operations"],
+      "notes": "Page-change monitor. Invitation-only, SoCal 5-county. Awards $25K-$400K unrestricted. Housing justice, nonprofit effectiveness. Public grants database at weingartfnd.org/grant-p-r-i-database/."
+    },
+    {
+      "scraper_id": "heffernan-foundation",
+      "name": "Heffernan Foundation",
+      "url": "https://www.heffernanfoundation.org/",
+      "type": "scraper",
+      "priority": "low",
+      "frequency": "monthly",
+      "geography": "CA-BayArea",
+      "profiles": ["hanna-institute", "residential-housing"],
+      "notes": "Page-change monitor. Walnut Creek, invite-only annual cycle (Sept 15 deadline). Education, food insecurity, homelessness. Awards $2.5K-$10K. Funds 3 Hanna peer orgs including Buckelew and North Bay Children's Center."
     }
   ],
-  "version": "2.0",
-  "last_updated": "2026-03-27",
-  "notes": "Phase 2 implements scrapers. APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda."
+  "version": "2.1",
+  "last_updated": "2026-04-07",
+  "notes": "Phase 2 implements scrapers (17 original + 4 discovered foundations = 21 sources). APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda. Phase 2.1 added Doheny Foundation scraper + 3 page-change monitors from 990-PF funder analysis."
 }

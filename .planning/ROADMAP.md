@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Infrastructure + Org Profile** - AWS stack, RDS schema, org context files, RAG corpus, HyDE embeddings
 - [ ] **Phase 2: Ingestion Pipeline + Backfill** - 17-source scraper fan-out, Step Functions Standard, extraction, dedup, embed, health monitoring, backfill
+- [ ] **Phase 2.1: Discovered Foundation Scrapers** *(INSERTED)* - Doheny Foundation Playwright scraper + 3 page-change monitors (Sobrato, Weingart, Heffernan) from 990-PF funder analysis
 - [ ] **Phase 3: AI Evaluation Pipeline** - LangGraph Prospector + Evaluator, per-profile HyDE search, 7-flag scoring, versioned prompts
 - [ ] **Phase 4: Output, HITL, and Handoff** - SES digest, API Gateway, Custom GPT, Google Sheets, CSV export, RUNBOOK, staff onboarding
 
@@ -56,6 +57,21 @@ Plans:
 - [ ] 02-02-PLAN.md -- 12 Playwright Scrapers (CA DHCS, SAMHSA, BSCC, 3 foundations, Sonoma Community Foundation, 5 Sonoma County departments)
 - [ ] 02-03-PLAN.md -- Processing Lambdas (Extraction with GPT-5.4-mini, Dedup SHA-256, Store with Bedrock embedding, Health monitoring)
 - [ ] 02-04-PLAN.md -- Step Functions Standard Pipeline + EventBridge + Backfill Script
+
+### Phase 2.1: Discovered Foundation Scrapers *(INSERTED)*
+**Goal**: Add 4 new grant sources discovered from 990-PF funder analysis of Hanna's peer nonprofits -- 1 full Playwright scraper (Doheny Foundation) and 3 generic page-change monitors (Sobrato, Weingart, Heffernan) -- expanding pipeline coverage from 17 to 21 sources.
+**Depends on**: Phase 2
+**Requirements**: INGEST-01, INGEST-02
+**Success Criteria** (what must be TRUE):
+  1. Doheny Foundation scraper extends BasePlaywrightScraper, fetches grant opportunities from dohenyfoundation.org/grants/, and returns structured RawGrant objects
+  2. PageChangeMonitor is a reusable generic class that detects content changes at any URL via SHA-256 hashing -- used by 3 invitation-only foundations
+  3. handler.py dispatches all 4 new scraper_ids (doheny-foundation, sobrato-philanthropies, weingart-foundation, heffernan-foundation)
+  4. scraper_registry.json contains all 4 new entries with correct URLs, geography, profiles, and notes
+  5. Funder leads report (output/funder_leads_report.md) is ready for Hanna's development team with top 15 leads + action items
+**Plans**: 1 plan
+
+Plans:
+- [ ] 02.1-01-PLAN.md -- Doheny Foundation Scraper + Page-Change Monitors + Registry Update
 
 ### Phase 3: AI Evaluation Pipeline
 **Goal**: The LangGraph evaluation pipeline searches the grants database per department profile using HyDE embeddings, scores candidates with GPT-5.4 against Hanna's 7-flag evaluation framework, and writes scored results to RDS -- so that Phase 4 can deliver them to staff.

@@ -53,6 +53,10 @@ def _get_scraper_classes() -> dict:
     from scrapers.playwright.sonoma_county_css import SonomaCountyCss
     from scrapers.playwright.sonoma_county_bhs import SonomaCountyBhs
 
+    # Discovered foundation scrapers (Phase 2.1 — from 990 funder analysis)
+    from scrapers.playwright.doheny_foundation import DohenyFoundation
+    from scrapers.playwright.page_change_monitor import PageChangeMonitor
+
     return {
         # API scrapers
         "grants-ca-gov": GrantsCaGov,
@@ -73,6 +77,11 @@ def _get_scraper_classes() -> dict:
         "sonoma-county-oes": SonomaCountyOes,
         "sonoma-county-css": SonomaCountyCss,
         "sonoma-county-bhs": SonomaCountyBhs,
+        # Discovered foundations (Phase 2.1)
+        "doheny-foundation": DohenyFoundation,
+        "sobrato-philanthropies": PageChangeMonitor,
+        "weingart-foundation": PageChangeMonitor,
+        "heffernan-foundation": PageChangeMonitor,
     }
 
 
