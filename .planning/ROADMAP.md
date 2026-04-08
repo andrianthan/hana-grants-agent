@@ -104,3 +104,13 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 2. Ingestion Pipeline + Backfill | 0/4 | Planning complete | - |
 | 3. AI Evaluation Pipeline | 0/2 | Planning complete | - |
 | 4. Output, HITL, and Handoff | 0/4 | Planning complete | - |
+
+### Phase 5: Expand Data Sources - Simpler.Grants.gov API scraper
+
+**Goal:** Add a Simpler.Grants.gov REST API scraper that supplements the existing Grants.gov legacy scraper, expanding federal grant coverage for Hanna Center during the Grants.gov-to-Simpler migration period.
+**Requirements**: EXPAND-01, EXPAND-02
+**Depends on:** Phase 2 (scraper infrastructure must be deployed)
+**Plans:** 1 plan
+
+Plans:
+- [ ] 05-01-PLAN.md -- SimplerGrantsGov scraper, unit tests, registry + handler + CDK integration

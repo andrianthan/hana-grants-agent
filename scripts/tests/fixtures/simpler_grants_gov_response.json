@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "opportunity_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "opportunity_title": "Community Mental Health Services Block Grant",
+      "agency_name": "Department of Health and Human Services",
+      "summary": "Funding for community-based mental health services for adults with serious mental illness and children with serious emotional disturbances.",
+      "close_date": "2026-06-15",
+      "post_date": "2026-03-01",
+      "opportunity_status": "posted"
+    },
+    {
+      "opportunity_id": "f9e8d7c6-b5a4-3210-fedc-ba9876543210",
+      "opportunity_title": "Youth Resilience and Recovery Program",
+      "agency_name": "Substance Abuse and Mental Health Services Administration",
+      "summary": "Supports evidence-based programs for youth resilience building and trauma recovery.",
+      "close_date": "2026-07-30",
+      "post_date": "2026-04-01",
+      "opportunity_status": "posted"
+    }
+  ],
+  "pagination_info": {
+    "page_offset": 1,
+    "page_size": 25,
+    "total_pages": 1,
+    "total_records": 2
+  }
+}
