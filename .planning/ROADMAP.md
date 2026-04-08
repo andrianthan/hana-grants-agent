@@ -110,7 +110,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 **Goal:** Add a Simpler.Grants.gov REST API scraper that supplements the existing Grants.gov legacy scraper, expanding federal grant coverage for Hanna Center during the Grants.gov-to-Simpler migration period.
 **Requirements**: EXPAND-01, EXPAND-02
 **Depends on:** Phase 2 (scraper infrastructure must be deployed)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 05-01-PLAN.md -- SimplerGrantsGov scraper, unit tests, registry + handler + CDK integration
+- [x] 05-01-PLAN.md -- SimplerGrantsGov scraper, unit tests, registry + handler + CDK integration

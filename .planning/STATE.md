@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-30T03:22:08.476Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-04-08T04:25:42.199Z"
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 15
-  completed_plans: 5
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Grant staff receive a weekly digest of relevant, scored grant opportunities -- found automatically from 17 CA/federal/foundation sources, no manual research needed. Replaces Instrumentl ($3,000/year) at under $50/month.
-**Current focus:** Phase 01 — org-profile-and-context
+**Current focus:** Phase 05 — expand-data-sources-simpler-grants-gov-api-scraper
 
 ## Current Position
 
-Phase: 02
-Plan: Not started
+Phase: 05 (expand-data-sources-simpler-grants-gov-api-scraper) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: Not started
 | Phase 01 P03 | 3min | 2 tasks | 7 files |
 | Phase 01 P05 | 2min | 1 tasks | 1 files |
 | Phase 01 P01 | 3min | 2 tasks | 5 files |
+| Phase 05 P01 | 2 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 01]: SHA-256 hash of full profile section text for HyDE regeneration detection
 - [Phase 01]: us-west-1 region for CDK stack (closest to Hanna Center in Sonoma County)
 - [Phase 01]: Secrets Manager rotation deferred to Phase 2 with detailed TODO (Lambda-outside-VPC networking conflict)
+- [Phase 05]: Simpler.Grants.gov supplements grants-gov (not replaces) — SHA-256 dedup collapses any overlapping opportunities during Grants.gov migration period
+- [Phase 05]: Raw client.post required for X-API-Key header — _post_json has no custom header support in BaseApiClient
 
 ### Critical Corrections Applied
 
@@ -104,6 +107,10 @@ These corrections from research are reflected in all plan files:
 - FUNDER-DIRECTORY.md: needs Hanna's funder relationship history data for known-funder boost (D3)
 - pgvector version check at deploy: if 0.8.0, avoid parallel HNSW index builds (CVE-2026-3172)
 
+### Roadmap Evolution
+
+- Phase 5 added: Expand Data Sources - Simpler.Grants.gov API scraper
+
 ### Blockers/Concerns
 
 - Hanna Center's org materials (past grants, program guidelines) have been partially received -- 25 PDFs in org-materials/. Additional materials may arrive during Phase 1.
@@ -111,7 +118,7 @@ These corrections from research are reflected in all plan files:
 
 ## Session Continuity
 
-Last session: 2026-03-30T03:13:06.250Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-08T04:25:42.197Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
 Next action: `/gsd:execute 01-01` to begin CDK infrastructure stack
