@@ -2,7 +2,7 @@ import json
 import os
 
 from aws_cdk import (
-    Stack, Duration, RemovalPolicy, CfnOutput, CfnParameter,
+    Stack, Duration, RemovalPolicy, CfnOutput, CfnParameter, BundlingOptions,
     aws_ec2 as ec2, aws_rds as rds,
     aws_lambda as lambda_, aws_apigateway as apigw,
     aws_s3 as s3, aws_logs as logs,
@@ -13,6 +13,7 @@ from aws_cdk import (
     aws_ecr_assets as ecr_assets,
     aws_cloudwatch as cw,
     aws_cloudwatch_actions as cw_actions,
+    aws_ses as ses,
 )
 from constructs import Construct
 
@@ -48,6 +49,17 @@ class HannaStack(Stack):
             description=(
                 "OpenRouter API key for LLM calls (extraction, evaluation). "
                 "Pass via --parameters OpenRouterApiKey=sk-or-... at deploy time."
+            ),
+        )
+
+        simpler_grants_api_key_param = CfnParameter(
+            self, "SimplerGrantsApiKey",
+            type="String",
+            no_echo=True,
+            default="",
+            description=(
+                "Simpler.Grants.gov API key. Obtain from simpler.grants.gov/developer "
+                "(Login.gov sign-in required). Pass via --parameters SimplerGrantsApiKey=<key> at deploy time."
             ),
         )
 
@@ -188,17 +200,18 @@ class HannaStack(Stack):
                 "OPENROUTER_API_KEY": openrouter_api_key_param.value_as_string,
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
                 "EXTRACTION_MODEL": "openai/gpt-5.4-mini",
+                "SIMPLER_GRANTS_API_KEY": simpler_grants_api_key_param.value_as_string,
             },
             architecture=lambda_.Architecture.X86_64,
         )
 
-        # --- Processing Lambda (zip package, lightweight utility per INFRA-04) ---
-        processing_fn = lambda_.Function(
+        # --- Processing Lambda (Docker image) ---
+        processing_fn = lambda_.DockerImageFunction(
             self, "HannaProcessingFn",
-            runtime=lambda_.Runtime.PYTHON_3_13,
-            handler="processing_handler.handler",
-            code=lambda_.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "scrapers", "processing"),
+            code=lambda_.DockerImageCode.from_image_asset(
+                directory=os.path.join(os.path.dirname(__file__), "..", ".."),
+                file="infrastructure/docker/processing/Dockerfile",
+                platform=ecr_assets.Platform.LINUX_AMD64,
             ),
             memory_size=512,
             timeout=Duration.minutes(5),
@@ -361,8 +374,18 @@ class HannaStack(Stack):
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
                 "PREFILTER_MODEL": "openai/gpt-4.1-mini",
                 "EVALUATOR_MODEL": "openai/gpt-4.1",
+                "NOTIFICATION_SENDER": "athan@hannacenter.org",
+                "NOTIFICATION_RECIPIENT": "athan@hannacenter.org",
             },
             architecture=lambda_.Architecture.X86_64,
+        )
+
+        # SES permissions for sending grant notification emails
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=["*"],
+            )
         )
 
         # --- EventBridge Rules ---
@@ -380,17 +403,31 @@ class HannaStack(Stack):
             }),
         ))
 
-        # Weekly evaluation: Monday 7am PT = 14:00 UTC
-        # Disabled until first successful manual invocation confirms pipeline works
-        weekly_rule = events.Rule(
-            self, "HannaWeeklyEvaluation",
-            schedule=events.Schedule.cron(week_day="MON", hour="14", minute="0"),
-            enabled=False,
+        # Daily evaluation: 8am PT = 15:00 UTC (runs after 6am PT ingestion)
+        # Scores new grants and sends daily alert email for grants >= 6.0
+        daily_eval_rule = events.Rule(
+            self, "HannaDailyEvaluation",
+            schedule=events.Schedule.cron(hour="15", minute="0"),
+            enabled=False,  # Enable after first successful manual run
         )
-        weekly_rule.add_target(targets.LambdaFunction(
+        daily_eval_rule.add_target(targets.LambdaFunction(
             evaluator_fn,
             event=events.RuleTargetInput.from_object({
                 "run_all_profiles": True,
+            }),
+        ))
+
+        # Weekly digest: Friday 5pm PT = Saturday 00:00 UTC
+        # Compiles all grants scored during the week into a summary email
+        digest_rule = events.Rule(
+            self, "HannaFridayDigest",
+            schedule=events.Schedule.cron(week_day="SAT", hour="0", minute="0"),
+            enabled=False,  # Enable after SES verification
+        )
+        digest_rule.add_target(targets.LambdaFunction(
+            evaluator_fn,
+            event=events.RuleTargetInput.from_object({
+                "action": "weekly_digest",
             }),
         ))
 

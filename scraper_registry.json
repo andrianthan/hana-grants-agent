@@ -186,9 +186,27 @@
       "geography": "sonoma-county",
       "profiles": ["mental-health-hub"],
       "notes": "County behavioral health contracts and subgrants. Key funder for Hanna's community mental health services."
+    },
+    {
+      "scraper_id": "simpler-grants-gov",
+      "name": "Federal Grants (Simpler.Grants.gov)",
+      "url": "https://simpler.grants.gov/",
+      "type": "api",
+      "priority": "high",
+      "frequency": "daily",
+      "geography": "national",
+      "profiles": [
+        "mental-health-hub",
+        "hanna-institute",
+        "residential-housing",
+        "hanna-academy",
+        "recreation-enrichment",
+        "general-operations"
+      ],
+      "notes": "Simpler.Grants.gov REST API — successor to legacy Grants.gov. Filters: grant/cooperative_agreement + 501(c)(3) nonprofits + posted/forecasted status. Requires SIMPLER_GRANTS_API_KEY env var."
     }
   ],
   "version": "2.0",
-  "last_updated": "2026-03-27",
-  "notes": "Phase 2 implements scrapers. APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda."
+  "last_updated": "2026-04-07",
+  "notes": "Phase 2 implements scrapers. APIs (grants-ca-gov, grants-gov, grantmakers-io) use native API clients. Scrapers use Playwright on Lambda. Phase 5 adds simpler-grants-gov API scraper."
 }

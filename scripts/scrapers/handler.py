@@ -32,12 +32,13 @@ def _load_registry() -> list[dict]:
 
 def _get_scraper_classes() -> dict:
     """Build mapping of scraper_id -> class. Imported lazily."""
-    # API scrapers (5)
+    # API scrapers (6)
     from scrapers.api.grants_ca_gov import GrantsCaGov
     from scrapers.api.grants_gov import GrantsGov
     from scrapers.api.propublica import ProPublica
     from scrapers.api.usaspending import USASpending
     from scrapers.api.grantmakers_io import GrantmakersIo
+    from scrapers.api.simpler_grants_gov import SimplerGrantsGov
 
     # Playwright scrapers (12)
     from scrapers.playwright.ca_dhcs import CaDhcs
@@ -60,6 +61,7 @@ def _get_scraper_classes() -> dict:
         "propublica-990": ProPublica,
         "usaspending-gov": USASpending,
         "grantmakers-io": GrantmakersIo,
+        "simpler-grants-gov": SimplerGrantsGov,
         # Playwright scrapers
         "california-dhcs": CaDhcs,
         "samhsa-grants": Samhsa,
