@@ -1,0 +1,8 @@
+infrastructure/cdk.out
+infrastructure/.venv
+infrastructure/node_modules
+.git
+.context
+__pycache__
+*.pyc
+.venv

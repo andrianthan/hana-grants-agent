@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS grants (
     embedding           vector({EMBEDDING_DIMS}),
     source              TEXT,
     raw_s3_key          TEXT,
+    source_url          TEXT,
     content_hash        TEXT NOT NULL,
     approval_status     TEXT DEFAULT 'pending',
     approved_profile_id TEXT,

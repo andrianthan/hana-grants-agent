@@ -6,13 +6,16 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# When bundled from scripts/, the Lambda root is scripts/
+# Add it to path so scrapers.* and utils.* imports work
+_lambda_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+sys.path.insert(0, _lambda_root)
 
-from processing.dedup import check_duplicates_batch
-from processing.extractor import extract_metadata, log_extraction_failure
-from processing.embedder import embed_and_store
-from processing.health_monitor import update_health
-from processing.pipeline_logger import start_run, complete_run, fail_run
+from scrapers.processing.dedup import check_duplicates_batch
+from scrapers.processing.extractor import extract_metadata, log_extraction_failure
+from scrapers.processing.embedder import embed_and_store
+from scrapers.processing.health_monitor import update_health
+from scrapers.processing.pipeline_logger import start_run, complete_run, fail_run
 from scrapers.base_scraper import RawGrant
 from utils.db import get_connection
 
@@ -54,7 +57,10 @@ def handler(event, context):
                 raw_html=g.get("raw_html"),
             ))
 
-        # 1. Dedup -- skip grants already in DB (per D-08)
+        # 1a. Backfill source_url and deadline for existing grants
+        _backfill_missing_fields(conn, raw_grants)
+
+        # 1b. Dedup -- skip grants already in DB (per D-08)
         new_grants = check_duplicates_batch(conn, raw_grants)
 
         # 2. Extract + Embed each new grant
@@ -89,6 +95,23 @@ def handler(event, context):
             "status": "error",
             "error": str(e)[:2000],
         }
+
+
+def _backfill_missing_fields(conn, raw_grants):
+    """Update source_url and deadline for existing grants that are missing them."""
+    from scrapers.processing.embedder import _safe_date
+    cur = conn.cursor()
+    for g in raw_grants:
+        cur.execute("""
+            UPDATE grants
+            SET source_url = COALESCE(%s, source_url),
+                deadline = COALESCE(%s::date, deadline),
+                updated_at = NOW()
+            WHERE content_hash = %s
+              AND (source_url IS NULL OR deadline IS NULL)
+        """, (g.source_url, _safe_date(g.deadline), g.content_hash))
+    conn.commit()
+    cur.close()
 
 
 def _log_pipeline_run(event):
