@@ -126,6 +126,7 @@ def vector_search(conn, embedding: list[float], top_k: int = VECTOR_TOP_K) -> li
             1 - (embedding <=> %s::vector) AS similarity
         FROM grants
         WHERE embedding IS NOT NULL
+          AND score IS NULL
         ORDER BY embedding <=> %s::vector
         LIMIT %s
         """,

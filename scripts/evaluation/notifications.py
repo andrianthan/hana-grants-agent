@@ -31,32 +31,37 @@ def send_daily_alert(conn, pipeline_result: dict):
     without opening whether new grants were found.
     """
     cur = conn.cursor()
-    # Get all grants scored today (above threshold)
+    # Get grants that haven't been alerted yet (above threshold)
+    # Using alerted_at IS NULL ensures each grant appears in exactly one daily email
     cur.execute(
         """
-        SELECT title, funder, score, score_reasoning, deadline, grant_id, source_url
+        SELECT id, title, funder, score, score_reasoning, deadline, grant_id, source_url
         FROM grants
         WHERE score >= %s
-          AND scored_at >= NOW() - INTERVAL '24 hours'
+          AND alerted_at IS NULL
         ORDER BY score DESC
         """,
         (SCORE_THRESHOLD,),
     )
-    above_grants = cur.fetchall()
+    above_rows = cur.fetchall()
+    above_ids = [row[0] for row in above_rows]
+    above_grants = [row[1:] for row in above_rows]  # Strip id for template compat
 
-    # Get grants scored today but below threshold
+    # Grants below threshold that haven't been alerted
     cur.execute(
         """
-        SELECT title, funder, score, score_reasoning, deadline, grant_id, source_url
+        SELECT id, title, funder, score, score_reasoning, deadline, grant_id, source_url
         FROM grants
         WHERE score < %s
           AND score IS NOT NULL
-          AND scored_at >= NOW() - INTERVAL '24 hours'
+          AND alerted_at IS NULL
         ORDER BY score DESC
         """,
         (SCORE_THRESHOLD,),
     )
-    below_grants = cur.fetchall()
+    below_rows = cur.fetchall()
+    below_ids = [row[0] for row in below_rows]
+    below_grants = [row[1:] for row in below_rows]
     cur.close()
 
     total_scored = len(above_grants) + len(below_grants)
@@ -188,6 +193,18 @@ def send_daily_alert(conn, pipeline_result: dict):
     _send_email(subject, html_body, text_body)
     logger.info("Daily alert sent: %d above, %d below, %d total to %s",
                 len(above_grants), len(below_grants), total_scored, RECIPIENT_EMAIL)
+
+    # Mark these grants as alerted so they don't appear in future emails
+    alerted_ids = above_ids + below_ids
+    if alerted_ids:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE grants SET alerted_at = NOW() WHERE id = ANY(%s)",
+            (alerted_ids,),
+        )
+        conn.commit()
+        cur.close()
+        logger.info("Marked %d grants as alerted", len(alerted_ids))
 
 
 def send_weekly_digest(conn):

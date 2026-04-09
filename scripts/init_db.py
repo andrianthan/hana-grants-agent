@@ -48,9 +48,22 @@ CREATE TABLE IF NOT EXISTS grants (
     scored_by_profiles  TEXT[],
     ingested_at         TIMESTAMPTZ DEFAULT NOW(),
     scored_at           TIMESTAMPTZ,
+    alerted_at          TIMESTAMPTZ,
     updated_at          TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(content_hash)
 );
+
+-- Add alerted_at column if missing (migration for existing deployments)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'grants' AND column_name = 'alerted_at'
+    ) THEN
+        ALTER TABLE grants ADD COLUMN alerted_at TIMESTAMPTZ;
+    END IF;
+END
+$$;
 
 CREATE INDEX IF NOT EXISTS idx_grants_deadline ON grants (deadline);
 CREATE INDEX IF NOT EXISTS idx_grants_approval_status ON grants (approval_status);
