@@ -51,6 +51,34 @@ class HannaStack(Stack):
             ),
         )
 
+        ms_credentials_secret_arn_param = CfnParameter(
+            self, "MsCredentialsSecretArn",
+            type="String",
+            default="",
+            description="Secrets Manager ARN for Microsoft Graph credentials (tenant_id, client_id, client_secret).",
+        )
+
+        ms_drive_id_param = CfnParameter(
+            self, "MsDriveId",
+            type="String",
+            default="",
+            description="SharePoint drive ID containing the Excel grants tracker file.",
+        )
+
+        ms_workbook_id_param = CfnParameter(
+            self, "MsWorkbookId",
+            type="String",
+            default="",
+            description="SharePoint item ID of the Excel grants tracker file.",
+        )
+
+        ms_workbook_url_param = CfnParameter(
+            self, "MsWorkbookUrl",
+            type="String",
+            default="",
+            description="Browser URL to the Excel Online grants tracker (for email links).",
+        )
+
         # --- VPC ---
         vpc = ec2.Vpc(
             self, "HannaVpc",
@@ -165,6 +193,13 @@ class HannaStack(Stack):
                 ],
             )
         )
+        # SES: send email notifications (daily alerts + weekly digest)
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=["*"],
+            )
+        )
 
         # --- Scraper Docker Lambda (INFRA-04, D-09) ---
         scraper_fn = lambda_.DockerImageFunction(
@@ -192,13 +227,17 @@ class HannaStack(Stack):
             architecture=lambda_.Architecture.X86_64,
         )
 
-        # --- Processing Lambda (zip package, lightweight utility per INFRA-04) ---
-        processing_fn = lambda_.Function(
+        # --- Processing Docker Lambda (dedup, extract, embed, health) ---
+        processing_fn = lambda_.DockerImageFunction(
             self, "HannaProcessingFn",
-            runtime=lambda_.Runtime.PYTHON_3_13,
-            handler="processing_handler.handler",
-            code=lambda_.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "scrapers", "processing"),
+            code=lambda_.DockerImageCode.from_image_asset(
+                directory=os.path.join(os.path.dirname(__file__), "..", ".."),  # repo root
+                file="infrastructure/docker/processing/Dockerfile",
+                platform=ecr_assets.Platform.LINUX_AMD64,
+                exclude=[
+                    "infrastructure/cdk.out", ".venv", ".git", ".planning",
+                    "org-materials", "__pycache__", "*.pyc", ".context",
+                ],
             ),
             memory_size=512,
             timeout=Duration.minutes(5),
@@ -211,6 +250,7 @@ class HannaStack(Stack):
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
                 "EXTRACTION_MODEL": "openai/gpt-4.1-mini",
             },
+            architecture=lambda_.Architecture.X86_64,
         )
 
         # --- API Gateway Scaffold ---
@@ -361,6 +401,12 @@ class HannaStack(Stack):
                 "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
                 "PREFILTER_MODEL": "openai/gpt-4.1-mini",
                 "EVALUATOR_MODEL": "openai/gpt-4.1",
+                "NOTIFICATION_SENDER": alert_email_param.value_as_string,
+                "NOTIFICATION_RECIPIENT": alert_email_param.value_as_string,
+                "MS_CREDENTIALS_SECRET_ARN": ms_credentials_secret_arn_param.value_as_string,
+                "MS_DRIVE_ID": ms_drive_id_param.value_as_string,
+                "MS_WORKBOOK_ID": ms_workbook_id_param.value_as_string,
+                "MS_WORKBOOK_URL": ms_workbook_url_param.value_as_string,
             },
             architecture=lambda_.Architecture.X86_64,
         )
@@ -380,17 +426,32 @@ class HannaStack(Stack):
             }),
         ))
 
-        # Weekly evaluation: Monday 7am PT = 14:00 UTC
-        # Disabled until first successful manual invocation confirms pipeline works
-        weekly_rule = events.Rule(
-            self, "HannaWeeklyEvaluation",
-            schedule=events.Schedule.cron(week_day="MON", hour="14", minute="0"),
-            enabled=False,
+        # Daily evaluation: 9am PT = 16:00 UTC (3 hours after ingestion completes)
+        # Scores new grants and sends daily alert email
+        daily_eval_rule = events.Rule(
+            self, "HannaDailyEvaluation",
+            schedule=events.Schedule.cron(hour="16", minute="0"),
+            enabled=True,
         )
-        weekly_rule.add_target(targets.LambdaFunction(
+        daily_eval_rule.add_target(targets.LambdaFunction(
             evaluator_fn,
             event=events.RuleTargetInput.from_object({
                 "run_all_profiles": True,
+                "send_alert": True,
+            }),
+        ))
+
+        # Weekly digest: Friday 8am PT = 15:00 UTC
+        # Sends a comprehensive weekly summary of all scored grants
+        weekly_digest_rule = events.Rule(
+            self, "HannaFridayDigest",
+            schedule=events.Schedule.cron(week_day="FRI", hour="15", minute="0"),
+            enabled=True,
+        )
+        weekly_digest_rule.add_target(targets.LambdaFunction(
+            evaluator_fn,
+            event=events.RuleTargetInput.from_object({
+                "action": "weekly_digest",
             }),
         ))
 

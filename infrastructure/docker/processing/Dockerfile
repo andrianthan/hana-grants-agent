@@ -1,17 +1,13 @@
 ARG FUNCTION_DIR="/function"
 
-FROM mcr.microsoft.com/playwright/python:v1.58.0-noble AS build-image
+FROM python:3.13-slim AS build-image
 
 ARG FUNCTION_DIR
 RUN mkdir -p ${FUNCTION_DIR}
 
-# Copy and install requirements first for Docker layer caching
-COPY scripts/scrapers/requirements.txt /tmp/requirements.txt
+# Install requirements
+COPY scripts/requirements.txt /tmp/requirements.txt
 RUN pip3 install --target ${FUNCTION_DIR} -r /tmp/requirements.txt
-
-# Install only Chromium (not all browsers) — per Pitfall 2
-# Must run after pip install so playwright CLI is available
-RUN pip3 install playwright==1.58.0 && playwright install chromium
 
 # Install Lambda runtime interface client
 RUN pip3 install --target ${FUNCTION_DIR} awslambdaric
@@ -19,14 +15,13 @@ RUN pip3 install --target ${FUNCTION_DIR} awslambdaric
 # Copy function code
 COPY scripts/scrapers/ ${FUNCTION_DIR}/scrapers/
 COPY scripts/utils/ ${FUNCTION_DIR}/utils/
-COPY scraper_registry.json ${FUNCTION_DIR}/
 
 # Production stage
-FROM mcr.microsoft.com/playwright/python:v1.58.0-noble
+FROM python:3.13-slim
 
 ARG FUNCTION_DIR
 WORKDIR ${FUNCTION_DIR}
 COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 ENTRYPOINT [ "python", "-m", "awslambdaric" ]
-CMD [ "scrapers.handler.handler" ]
+CMD [ "scrapers.processing.processing_handler.handler" ]

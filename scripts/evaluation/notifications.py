@@ -12,9 +12,11 @@ import boto3
 
 logger = logging.getLogger(__name__)
 
+from sheets import get_sheet_url
+
 SES_REGION = os.environ.get("AWS_REGION_NAME", "us-west-2")
-SENDER_EMAIL = os.environ.get("NOTIFICATION_SENDER", "grants@hannacenter.org")
-RECIPIENT_EMAIL = os.environ.get("NOTIFICATION_RECIPIENT", "athan@hannacenter.org")
+SENDER_EMAIL = os.environ.get("NOTIFICATION_SENDER")
+RECIPIENT_EMAIL = os.environ.get("NOTIFICATION_RECIPIENT")
 SCORE_THRESHOLD = 6.0
 
 
@@ -69,6 +71,7 @@ def send_daily_alert(conn, pipeline_result: dict):
 
     # Build HTML body
     today_str = datetime.now(timezone.utc).strftime("%B %d, %Y")
+    sheet_url = get_sheet_url()
 
     if not above_grants and not below_grants:
         # No grants scored at all
@@ -127,6 +130,7 @@ def send_daily_alert(conn, pipeline_result: dict):
                 <strong>{len(below_grants)}</strong> below threshold &nbsp;|&nbsp;
                 <strong>{total_scored}</strong> total scored
             </div>
+            {'<div style="background:#e3f2fd;padding:12px;border-radius:8px;margin-bottom:20px;text-align:center;"><a href="' + _esc(sheet_url) + '" style="color:#1565c0;font-weight:bold;text-decoration:none;font-size:15px;">Open Grants Tracker &rarr;</a><br><span style="font-size:12px;color:#666;">Review, approve, or skip grants in Google Sheets</span></div>' if sheet_url else ''}
         """
 
         if above_grants:
@@ -207,13 +211,33 @@ def send_weekly_digest(conn):
     cur.close()
 
     if not grants:
-        logger.info("Weekly digest: no grants scored this week — skipping email")
+        # Still send an email so staff knows the pipeline is running
+        week_str = datetime.now(timezone.utc).strftime("%B %d, %Y")
+        _send_email(
+            "Hanna Grants Weekly Digest: No new grants this week",
+            f"""
+            <html>
+            <body style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
+                <h2 style="color:#1a237e;">Weekly Grant Digest</h2>
+                <p style="color:#555;">Week ending {week_str}</p>
+                <div style="background:#f5f5f5;padding:20px;border-radius:8px;text-align:center;">
+                    <p style="font-size:16px;color:#666;margin:0;">No new grants were scored this week.</p>
+                    <p style="font-size:13px;color:#999;margin-top:8px;">The pipeline ran daily but found no new grants to evaluate.</p>
+                </div>
+                <p style="margin-top:20px;font-size:12px;color:#999;">Hanna Grants Agent</p>
+            </body>
+            </html>
+            """,
+            f"Weekly Grant Digest — Week ending {week_str}\nNo new grants were scored this week.\n",
+        )
+        logger.info("Weekly digest sent: no grants this week")
         return
 
     above = [g for g in grants if g[2] >= SCORE_THRESHOLD]
     below = [g for g in grants if g[2] < SCORE_THRESHOLD]
 
     subject = f"Hanna Grants Weekly Digest: {len(above)} promising grants this week"
+    sheet_url = get_sheet_url()
 
     # Build HTML
     html_body = f"""
@@ -227,6 +251,7 @@ def send_weekly_digest(conn):
             <strong>{len(below)}</strong> below threshold &nbsp;|&nbsp;
             <strong>{len(grants)}</strong> total scored
         </div>
+        {'<div style="background:#e3f2fd;padding:12px;border-radius:8px;margin-bottom:20px;text-align:center;"><a href="' + _esc(sheet_url) + '" style="color:#1565c0;font-weight:bold;text-decoration:none;font-size:15px;">Open Grants Tracker &rarr;</a><br><span style="font-size:12px;color:#666;">Review, approve, or skip grants in Google Sheets</span></div>' if sheet_url else ''}
     """
 
     if above:
@@ -310,6 +335,10 @@ def send_weekly_digest(conn):
 
 def _send_email(subject: str, html_body: str, text_body: str):
     """Send an email via SES."""
+    if not SENDER_EMAIL or not RECIPIENT_EMAIL:
+        raise RuntimeError(
+            "NOTIFICATION_SENDER and NOTIFICATION_RECIPIENT environment variables are required"
+        )
     ses = _get_ses_client()
     try:
         ses.send_email(

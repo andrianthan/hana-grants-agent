@@ -49,6 +49,7 @@ def handler(event, context):
     # Late import to allow Lambda cold start optimization
     from pipeline import run_pipeline
     from notifications import send_daily_alert, send_weekly_digest
+    from sheets import append_scored_grants, sync_approvals_from_sheet
     from utils.db import get_connection
 
     # Get config from environment
@@ -91,6 +92,20 @@ def handler(event, context):
     if not os.environ.get("OPENROUTER_API_KEY"):
         raise RuntimeError("OPENROUTER_API_KEY environment variable is required")
 
+    # Sync approvals from Google Sheet before running evaluation
+    # (so approved/skipped grants are excluded from re-scoring)
+    try:
+        conn = get_connection(secret_arn, region)
+        synced = sync_approvals_from_sheet(conn)
+        if synced:
+            result_extras = {"approvals_synced": synced}
+        else:
+            result_extras = {}
+        conn.close()
+    except Exception as e:
+        logger.warning("Google Sheets approval sync failed (non-fatal): %s", e)
+        result_extras = {"approvals_sync_error": str(e)}
+
     try:
         result = run_pipeline(
             secret_arn=secret_arn,
@@ -98,18 +113,23 @@ def handler(event, context):
             dry_run=dry_run,
             region=region,
         )
+        result.update(result_extras)
 
         logger.info("Pipeline completed: %s", json.dumps(result, default=str))
 
-        # Send daily alert email after successful non-dry-run
+        # Append scored grants to Google Sheet + send daily alert
         if send_alert and not dry_run:
             try:
                 conn = get_connection(secret_arn, region)
+                # Append new grants to the sheet
+                appended = append_scored_grants(conn)
+                result["sheets_appended"] = appended
+                # Send daily alert email
                 send_daily_alert(conn, result)
                 conn.close()
                 result["daily_alert_sent"] = True
             except Exception as e:
-                logger.error("Failed to send daily alert: %s", e, exc_info=True)
+                logger.error("Failed to send daily alert or update sheet: %s", e, exc_info=True)
                 result["daily_alert_sent"] = False
                 result["daily_alert_error"] = str(e)
 

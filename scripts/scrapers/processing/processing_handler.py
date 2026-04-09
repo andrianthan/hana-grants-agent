@@ -6,7 +6,11 @@ import json
 import os
 import sys
 
+# Add parent dirs to path for Docker layout: /function/scrapers/processing/
+# One level up = /function/scrapers/ (for `from processing.xxx`)
+# Two levels up = /function/ (for `from scrapers.xxx` and `from utils.xxx`)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from processing.dedup import check_duplicates_batch
 from processing.extractor import extract_metadata, log_extraction_failure

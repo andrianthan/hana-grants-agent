@@ -14,6 +14,7 @@ import csv
 import httpx
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -161,11 +162,14 @@ async def find_peer_orgs(client: httpx.AsyncClient) -> dict[str, PeerOrg]:
 async def search_grantmakers(client: httpx.AsyncClient, org_name: str) -> list[dict]:
     """Search Grantmakers.io Algolia for 990-PF grants made TO an org."""
     try:
+        # Grantmakers.io public search-only Algolia keys (from their open source repo)
+        algolia_app_id = os.environ.get("ALGOLIA_APP_ID", "QA1231C5W9")
+        algolia_key = os.environ.get("ALGOLIA_SEARCH_KEY", "96a419d65f67ff3b4c54939f8e90c220")
         resp = await client.post(
-            "https://QA1231C5W9-dsn.algolia.net/1/indexes/grantmakers_io/query",
+            f"https://{algolia_app_id}-dsn.algolia.net/1/indexes/grantmakers_io/query",
             headers={
-                "X-Algolia-Application-Id": "QA1231C5W9",
-                "X-Algolia-API-Key": "96a419d65f67ff3b4c54939f8e90c220",
+                "X-Algolia-Application-Id": algolia_app_id,
+                "X-Algolia-API-Key": algolia_key,
                 "Content-Type": "application/json",
                 "Referer": "https://www.grantmakers.io/",
             },
